@@ -1,0 +1,152 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  /* remove global text and background colors to allow screen-level styling */
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+/* Reset and root layout centering overrides */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /* remove global background to avoid double-layer gradient */
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden; /* prevent horizontal scroll and lock layout */
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    /* remove light theme global background */
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+/* Flip Card Styles for FlashCards */
+.card-container {
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  position: relative;
+  width: 360px;
+  height: 260px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.card-face h2 {
+  font-size: 1.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.card-face p {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+/* In light theme, use a purple-like text color to ensure readability */
+.chakra-ui-light .card-face {
+  color: #4c1d95; /* purple-900 for stronger contrast */
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Color accents for front/back titles */
+.card-front h2 {
+  color: #38bdf8; /* sky-400 */
+}
+
+.card-back h2 {
+  color: #c084fc; /* purple-400 */
+}
+
+/* Small text helpers */
+.card-face p.synonym {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  margin-top: 0.5rem;
+}
+
+.card-face p.hint {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin-top: 0.6rem;
+}
