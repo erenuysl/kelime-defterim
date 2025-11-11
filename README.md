@@ -1,18 +1,18 @@
-# React + Vite
+# Kelime Defterim
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Günlük kelime ezberi ve çıktısını alabilmek için sade, modern bir uygulama.
 
-Currently, two official plugins are available:
+## Özellikler
+- Gün bazlı kelime kaydı  
+- PDF çıktısı  
+- Flash kartlar  
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Ekran Görüntüleri 👇
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+<p align="center">
+  <img width="900" alt="1" src="https://github.com/user-attachments/assets/d69d53b3-3cf8-469b-b4a0-01e10b47f1c2" />
+  <img width="900" alt="2" src="https://github.com/user-attachments/assets/73047c88-ee8a-49b9-a795-902c9180267a" />
+  <img width="900" alt="3" src="https://github.com/user-attachments/assets/99f445bc-0812-4827-a4cc-2b84c02b5a45" />
+  <img width="900" alt="4" src="https://github.com/user-attachments/assets/898ca176-0489-4d66-9bd3-6368a368ac5e" />
+  <img width="900" alt="5" src="https://github.com/user-attachments/assets/3c6537cd-85aa-49f0-ad9d-613b57a737b0" />
+</p>
