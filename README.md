@@ -1,18 +1,36 @@
-# Kelime Defterim
+# Word Notebook (Kelime Defterim)
 
-Günlük kelime ezberi ve çıktısını alabilmek için sade, modern bir uygulama.
+This is a simple web application to help you learn new vocabulary. You can create daily lists, add words, and practice with flashcards.
 
-## Özellikler
-- Gün bazlı kelime kaydı  
-- PDF çıktısı  
-- Flash kartlar  
+## Features
 
-## Ekran Görüntüleri 👇
+*   **Daily Lists:** Create a new notebook for each day.
+*   **Word Sets:** Group your words into sets.
+*   **Vocabulary:** Add English words, their Turkish meanings, and synonyms.
+*   **Flashcards:** Practice your words with a flip-card mode.
+*   **PDF Export:** Save your word lists as PDF files.
+*   **Dark Mode:** A beautiful "Deep Sea" theme that is easy on the eyes.
+*   **Mobile Friendly:** Works great on your phone and computer.
 
-<p align="center">
-  <img width="900" alt="1" src="https://github.com/user-attachments/assets/d69d53b3-3cf8-469b-b4a0-01e10b47f1c2" />
-  <img width="900" alt="2" src="https://github.com/user-attachments/assets/73047c88-ee8a-49b9-a795-902c9180267a" />
-  <img width="900" alt="3" src="https://github.com/user-attachments/assets/99f445bc-0812-4827-a4cc-2b84c02b5a45" />
-  <img width="900" alt="4" src="https://github.com/user-attachments/assets/898ca176-0489-4d66-9bd3-6368a368ac5e" />
-  <img width="900" alt="5" src="https://github.com/user-attachments/assets/3c6537cd-85aa-49f0-ad9d-613b57a737b0" />
-</p>
+## How to Run
+
+1.  Install the dependencies:
+    ```bash
+    npm install
+    ```
+
+2.  Start the application:
+    ```bash
+    npm run dev
+    ```
+
+3.  Open your browser and go to the link shown (usually `http://localhost:5173`).
+
+## Technologies
+
+*   React
+*   Chakra UI
+*   TypeScript
+*   Vite
+
+Enjoy learning!

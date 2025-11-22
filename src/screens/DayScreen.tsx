@@ -13,10 +13,15 @@ import {
   MenuList,
   MenuItem,
   useToast,
+  Card,
+  CardBody,
+  VStack,
 } from "@chakra-ui/react"
 import { AddIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, DeleteIcon, HamburgerIcon } from "@chakra-ui/icons"
 import { listSets, createSet, renameSet, deleteSet, getDay } from "../lib/storage"
 import type { Day as V2Day, Set as V2Set } from "../lib/storage"
+import ConfirmDialog from "../components/ConfirmDialog"
+import EmptyState from "../components/EmptyState"
 
 export default function DayScreen() {
   const { id: routeId, dayId: nestedDayId } = useParams()
@@ -27,6 +32,7 @@ export default function DayScreen() {
   const [sets, setSets] = useState<V2Set[]>([])
   const [dayName, setDayName] = useState("")
   const [dateISO, setDateISO] = useState("")
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!dayId) return
@@ -56,10 +62,11 @@ export default function DayScreen() {
     toast({ title: `Set adı '${updated.name}' olarak güncellendi`, status: "info" })
   }
 
-  const handleDeleteSet = (setId: string) => {
-    if (!dayId) return
-    deleteSet(dayId as string, setId)
+  const handleDeleteSet = () => {
+    if (!dayId || !deleteId) return
+    deleteSet(dayId as string, deleteId)
     setSets(listSets(dayId as string))
+    setDeleteId(null)
     toast({ title: "Set silindi", status: "warning" })
   }
 
@@ -67,88 +74,123 @@ export default function DayScreen() {
     <Box
       minH="100vh"
       w="100%"
-      bgGradient="linear(to-b, #0b0923, #130e3b, #090621)"
-      color="white"
-      display="flex"
-      flexDir="column"
-      alignItems="center"
-      justifyContent="flex-start"
-      textAlign="center"
-      px={{ base: 4, md: 8 }}
-      py={8}
-      gap={10}
+      p={{ base: 4, md: 8 }}
+      pt={{ base: 8, md: 12 }}
     >
       <Flex direction="column" align="center" justify="flex-start" w="100%" gap={6}>
-        <Flex gap={3} justify="center" w="100%" maxW="900px" mx="auto" my={6} wrap="wrap">
-          <Button leftIcon={<ChevronLeftIcon />} variant="ghost" size="lg" h="48px" borderRadius="xl" onClick={() => navigate("/")}>Geri Dön</Button>
-          <Button colorScheme="purple" size="lg" h="48px" borderRadius="xl" onClick={handleCreateSet}>
-            <AddIcon mr={2} /> Yeni Set
+        <Flex gap={3} justify="space-between" w="100%" maxW="1200px" mx="auto" my={4} align="center">
+          <Button
+            leftIcon={<ChevronLeftIcon />}
+            variant="ghost"
+            size="lg"
+            onClick={() => navigate("/")}
+            color="deepSea.lavenderGrey"
+            _hover={{ color: 'white', bg: 'whiteAlpha.200' }}
+          >
+            Geri Dön
+          </Button>
+          <Button
+            variant="solid"
+            size="lg"
+            onClick={handleCreateSet}
+            leftIcon={<AddIcon />}
+            boxShadow="lg"
+          >
+            Yeni Set
           </Button>
         </Flex>
 
-        <Box textAlign="center" w="100%" maxW="900px" mx="auto">
+        <Box textAlign="center" w="100%" maxW="900px" mx="auto" mb={8}>
           <Heading
-            size="lg"
+            size="2xl"
             fontWeight="extrabold"
             textAlign="center"
-            mb={4}
-            bgGradient="linear(to-r, #b794f4, #805ad5)"
+            mb={2}
+            bgGradient="linear(to-r, deepSea.duskBlue, deepSea.lavenderGrey)"
             bgClip="text"
           >
             {dayName}
           </Heading>
           {dateISO && (
-            <Text fontSize="sm" color="gray.600" _dark={{ color: "gray.400" }}>{dateISO}</Text>
+            <Text fontSize="lg" color="deepSea.lavenderGrey">
+              {dateISO}
+            </Text>
           )}
         </Box>
 
-        <SimpleGrid
-          columns={{ base: 1, sm: 2, md: 3 }}
-          spacing={{ base: 6, md: 8 }}
-          justifyItems="center"
-          w="100%"
-          maxW="900px"
-          mx="auto"
-        >
-          {sets.map((s) => (
-            <Box
-              key={s.id}
-              p={5}
-              bg="rgba(255,255,255,0.06)"
-              borderRadius="2xl"
-              boxShadow="0 8px 30px rgba(0,0,0,0.35)"
-              backdropFilter="blur(10px)"
-              w="full"
-              maxW="320px"
-              mx="auto"
-            >
-              <Flex justify="space-between" align="center" mb={2}>
-                <Text fontWeight="bold" fontSize="lg">{s.name}</Text>
-                <Menu>
-                  <MenuButton as={IconButton} icon={<HamburgerIcon />} size="sm" variant="ghost" />
-                  <MenuList>
-                    <MenuItem icon={<EditIcon />} onClick={() => handleRenameSet(s.id)}>Yeniden Adlandır</MenuItem>
-                    <MenuItem icon={<DeleteIcon />} onClick={() => handleDeleteSet(s.id)}>Sil</MenuItem>
-                  </MenuList>
-                </Menu>
-              </Flex>
-              <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>{s.words.length} kelime</Text>
-              <Button
-                rightIcon={<ChevronRightIcon />}
-                colorScheme="purple"
-                size="lg"
-                h="48px"
-                borderRadius="xl"
-                mt={4}
-                w="100%"
-                onClick={() => navigate(`/day/${dayId}/set/${s.id}`)}
-              >
-                Aç
-              </Button>
-            </Box>
-          ))}
-        </SimpleGrid>
+        {sets.length === 0 ? (
+          <EmptyState
+            title="Bu güne ait set bulunamadı"
+            description="Yeni bir set oluşturarak kelimelerini gruplayabilirsin."
+          />
+        ) : (
+          <SimpleGrid
+            columns={{ base: 1, sm: 2, md: 3, lg: 4 }}
+            spacing={6}
+            w="100%"
+            maxW="1200px"
+            mx="auto"
+          >
+            {sets.map((s) => (
+              <Card key={s.id} variant="elevated">
+                <CardBody>
+                  <Flex justify="space-between" align="flex-start" mb={4}>
+                    <Text fontWeight="bold" fontSize="xl" noOfLines={1} title={s.name}>
+                      {s.name}
+                    </Text>
+                    <Menu>
+                      <MenuButton
+                        as={IconButton}
+                        icon={<HamburgerIcon />}
+                        size="sm"
+                        variant="ghost"
+                        borderRadius="full"
+                        color="deepSea.lavenderGrey"
+                        _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+                      />
+                      <MenuList>
+                        <MenuItem icon={<EditIcon />} onClick={() => handleRenameSet(s.id)}>
+                          Yeniden Adlandır
+                        </MenuItem>
+                        <MenuItem icon={<DeleteIcon />} color="red.400" onClick={() => setDeleteId(s.id)}>
+                          Sil
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+                  </Flex>
+
+                  <VStack align="flex-start" spacing={1} mb={6}>
+                    <Text fontSize="3xl" fontWeight="bold" color="deepSea.duskBlue">
+                      {s.words.length}
+                    </Text>
+                    <Text fontSize="sm" color="deepSea.lavenderGrey" textTransform="uppercase">
+                      Kelime
+                    </Text>
+                  </VStack>
+
+                  <Button
+                    rightIcon={<ChevronRightIcon />}
+                    variant="outline"
+                    w="100%"
+                    onClick={() => navigate(`/day/${dayId}/set/${s.id}`)}
+                    _hover={{ bg: 'deepSea.duskBlue', color: 'white', borderColor: 'deepSea.duskBlue' }}
+                  >
+                    Aç
+                  </Button>
+                </CardBody>
+              </Card>
+            ))}
+          </SimpleGrid>
+        )}
       </Flex>
+
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDeleteSet}
+        title="Seti Sil"
+        description="Bu seti ve içindeki kelimeleri silmek istediğine emin misin?"
+      />
     </Box>
   )
 }

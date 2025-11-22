@@ -9,11 +9,16 @@ import {
   Select,
   VStack,
   HStack,
-  useColorModeValue,
   useToast,
+  Card,
+  CardBody,
+  Progress,
+  IconButton,
 } from '@chakra-ui/react'
-import { RepeatIcon } from '@chakra-ui/icons'
+import { RepeatIcon, ArrowBackIcon, ArrowForwardIcon, ChevronLeftIcon } from '@chakra-ui/icons'
+import { motion } from 'framer-motion'
 import { loadVault, Vault, Day, Set, Word } from '../lib/storage'
+import EmptyState from '../components/EmptyState'
 
 type DeckCard = { front: string; back: string; hint?: string }
 
@@ -28,9 +33,6 @@ export default function FlashCards() {
   const [deck, setDeck] = useState<DeckCard[]>([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
-
-  const cardBg = useColorModeValue('rgba(255,255,255,0.9)', 'rgba(255,255,255,0.06)')
-  const borderClr = useColorModeValue('rgba(0,0,0,0.08)', 'rgba(255,255,255,0.2)')
 
   useEffect(() => {
     try {
@@ -72,7 +74,7 @@ export default function FlashCards() {
     const arr = [...deck]
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+        ;[arr[i], arr[j]] = [arr[j], arr[i]]
     }
     setDeck(arr)
     setIndex(0)
@@ -80,172 +82,204 @@ export default function FlashCards() {
   }
 
   const current = deck[index]
+  const progress = deck.length > 0 ? ((index + 1) / deck.length) * 100 : 0
 
   return (
     <Box
       minH="100vh"
       w="100%"
-      bgGradient="linear(to-b, #0b0923, #130e3b, #090621)"
-      color="white"
-      display="flex"
-      flexDir="column"
-      alignItems="center"
-      justifyContent="flex-start"
-      textAlign="center"
-      px={{ base: 4, md: 8 }}
-      py={8}
-      gap={10}
+      p={{ base: 4, md: 8 }}
+      pt={{ base: 8, md: 12 }}
     >
       <Flex direction="column" align="center" justify="flex-start" w="100%" gap={8}>
-      <VStack spacing={3} w="100%" maxW="500px" align="center">
-        <Heading
-          size="lg"
-          fontWeight="extrabold"
-          textAlign="center"
-          mb={4}
-          bgGradient="linear(to-r, #b794f4, #805ad5)"
-          bgClip="text"
-        >
-          Flash Kartlar
-        </Heading>
-        <Button as={Link} to="/" variant="ghost" size="lg" h="48px" borderRadius="xl">← Deftere Dön</Button>
-      </VStack>
-
-      {/* Filters */}
-      <VStack spacing={3} w="100%" maxW="400px">
-        <Select
-          value={selectedDayId}
-          onChange={(e) => { setSelectedDayId(e.target.value); setSelectedSetId('all') }}
-          h="48px"
-          fontSize="md"
-          bg="rgba(255,255,255,0.05)"
-          borderColor="rgba(255,255,255,0.2)"
-          _focus={{ borderColor: "#b794f4", boxShadow: "0 0 0 1px #b794f4" }}
-        >
-          <option value="all">Tüm Günler</option>
-          {days.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </Select>
-        <Select
-          value={selectedSetId}
-          onChange={(e) => setSelectedSetId(e.target.value)}
-          h="48px"
-          fontSize="md"
-          bg="rgba(255,255,255,0.05)"
-          borderColor="rgba(255,255,255,0.2)"
-          _focus={{ borderColor: "#b794f4", boxShadow: "0 0 0 1px #b794f4" }}
-        >
-          <option value="all">Tüm Setler</option>
-          {(selectedDayId === 'all'
-            ? days.flatMap(d => d.sets)
-            : (days.find(d => d.id === selectedDayId)?.sets || [])
-          ).map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </Select>
-      </VStack>
-
-      {/* Card Container */}
-      <Box
-        className="card"
-        position="relative"
-        w="full"
-        maxW="400px"
-        mx="auto"
-        aspectRatio="16/10"
-        style={{ perspective: '1000px' }}
-        mt={4}
-        onClick={flip}
-        cursor="pointer"
-      >
-        <Box
-          className={`card-inner ${flipped ? 'flipped' : ''}`}
-          w="100%"
-          h="100%"
-          position="relative"
-          style={{ transformStyle: 'preserve-3d', transition: 'transform 0.6s ease' }}
-        >
-          <Box
-            className="card-face front"
-            position="absolute"
-            inset={0}
-            bg="rgba(255,255,255,0.06)"
-            borderRadius="2xl"
-            borderWidth="1px"
-            borderColor="whiteAlpha.300"
-            boxShadow="0 8px 30px rgba(0,0,0,0.35)"
-            backdropFilter="blur(10px)"
-            display="flex"
-            flexDir="column"
-            justifyContent="center"
-            alignItems="center"
-            sx={{ backfaceVisibility: 'hidden' }}
+        <VStack spacing={3} w="100%" maxW="500px" align="center">
+          <Heading
+            size="xl"
+            fontWeight="extrabold"
             textAlign="center"
-            p={4}
+            bgGradient="linear(to-r, deepSea.duskBlue, deepSea.lavenderGrey)"
+            bgClip="text"
           >
-            {current ? (
-              <>
-                <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{current.front}</Text>
-                {current.hint && (
-                  <Text fontSize="sm" color="whiteAlpha.600" mt={1}>Eş anlam: {current.hint}</Text>
-                )}
-              </>
-            ) : (
-              <Text opacity={0.8}>Kart bulunamadı</Text>
-            )}
-          </Box>
-
-          <Box
-            className="card-face back"
-            position="absolute"
-            inset={0}
-            bg="rgba(255,255,255,0.06)"
-            borderRadius="2xl"
-            borderWidth="1px"
-            borderColor="whiteAlpha.300"
-            boxShadow="0 8px 30px rgba(0,0,0,0.35)"
-            backdropFilter="blur(10px)"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            sx={{ backfaceVisibility: 'hidden' }}
-            transform="rotateY(180deg)"
-            textAlign="center"
-            p={4}
+            Flash Kartlar
+          </Heading>
+          <Button
+            as={Link}
+            to="/"
+            variant="ghost"
+            size="md"
+            leftIcon={<ChevronLeftIcon />}
+            color="deepSea.lavenderGrey"
+            _hover={{ color: 'white', bg: 'whiteAlpha.200' }}
           >
-            {current ? (
-              <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{current.back}</Text>
-            ) : (
-              <Text opacity={0.8}>Kart bulunamadı</Text>
-            )}
-          </Box>
-        </Box>
-      </Box>
+            Deftere Dön
+          </Button>
+        </VStack>
 
-      {/* Buttons */}
-      <HStack spacing={3} mt={6} flexWrap="wrap" justify="center">
-        <Button colorScheme="purple" size="lg" h="48px" borderRadius="xl" onClick={prev}>Önceki</Button>
-        <Button colorScheme="purple" size="lg" h="48px" borderRadius="xl" onClick={flip} leftIcon={<RepeatIcon />}>Çevir</Button>
-        <Button colorScheme="purple" size="lg" h="48px" borderRadius="xl" onClick={next}>Sonraki</Button>
-        <Button colorScheme="purple" size="lg" h="48px" borderRadius="xl" onClick={shuffle}>Karıştır</Button>
-      </HStack>
+        {/* Filters */}
+        <HStack spacing={4} w="100%" maxW="600px" wrap="wrap" justify="center">
+          <Select
+            value={selectedDayId}
+            onChange={(e) => { setSelectedDayId(e.target.value); setSelectedSetId('all') }}
+            bg="rgba(27, 38, 59, 0.3)"
+            borderColor="whiteAlpha.200"
+            color="white"
+            borderRadius="xl"
+            maxW="200px"
+            _focus={{ borderColor: 'deepSea.lavenderGrey' }}
+          >
+            <option value="all" style={{ color: 'black' }}>Tüm Günler</option>
+            {days.map((d) => (
+              <option key={d.id} value={d.id} style={{ color: 'black' }}>{d.name}</option>
+            ))}
+          </Select>
+          <Select
+            value={selectedSetId}
+            onChange={(e) => setSelectedSetId(e.target.value)}
+            bg="rgba(27, 38, 59, 0.3)"
+            borderColor="whiteAlpha.200"
+            color="white"
+            borderRadius="xl"
+            maxW="200px"
+            _focus={{ borderColor: 'deepSea.lavenderGrey' }}
+          >
+            <option value="all" style={{ color: 'black' }}>Tüm Setler</option>
+            {(selectedDayId === 'all'
+              ? days.flatMap(d => d.sets)
+              : (days.find(d => d.id === selectedDayId)?.sets || [])
+            ).map((s) => (
+              <option key={s.id} value={s.id} style={{ color: 'black' }}>{s.name}</option>
+            ))}
+          </Select>
+        </HStack>
 
-      {/* Index info */}
-      <Text fontSize="sm" mt={2} color="gray.300">
-        {deck.length > 0 ? `${index + 1} / ${deck.length}` : '0 / 0'}
-      </Text>
+        {deck.length === 0 ? (
+          <EmptyState
+            title="Kart bulunamadı"
+            description="Seçilen filtrelerde gösterilecek kelime yok."
+          />
+        ) : (
+          <VStack spacing={6} w="full" maxW="500px">
+            {/* Progress */}
+            <Box w="full">
+              <Flex justify="space-between" mb={2} fontSize="sm" color="deepSea.lavenderGrey">
+                <Text>İlerleme</Text>
+                <Text>{index + 1} / {deck.length}</Text>
+              </Flex>
+              <Progress value={progress} size="xs" colorScheme="blue" borderRadius="full" bg="whiteAlpha.100" />
+            </Box>
 
-      {/* CSS for flip and responsive aspect ratio */}
-      <style>
-        {`
-          .card-inner.flipped { transform: rotateY(180deg); }
-          .card-face { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
-          @media (max-width: 480px) {
-            .card { aspect-ratio: 3/4; }
-          }
-        `}
-      </style>
+            {/* Card Container */}
+            <Box
+              w="full"
+              aspectRatio="16/10"
+              sx={{ perspective: '1000px' }}
+              cursor="pointer"
+              onClick={flip}
+              position="relative"
+            >
+              <motion.div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  position: 'relative',
+                  transformStyle: 'preserve-3d',
+                }}
+                animate={{ rotateY: flipped ? 180 : 0 }}
+                transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+              >
+                {/* Front */}
+                <Card
+                  as={motion.div}
+                  position="absolute"
+                  inset={0}
+                  sx={{ backfaceVisibility: 'hidden' }}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  bg="rgba(255,255,255,0.1)"
+                  backdropFilter="blur(10px)"
+                  border="1px solid rgba(255,255,255,0.1)"
+                  boxShadow="xl"
+                  borderRadius="2xl"
+                >
+                  <CardBody display="flex" flexDirection="column" alignItems="center" justifyContent="center" gap={4}>
+                    <Text fontSize="3xl" fontWeight="bold" textAlign="center">
+                      {current?.front}
+                    </Text>
+                    {current?.hint && (
+                      <Text fontSize="md" color="deepSea.lavenderGrey" fontStyle="italic">
+                        ({current.hint})
+                      </Text>
+                    )}
+                    <Text fontSize="xs" color="deepSea.lavenderGrey" position="absolute" bottom={4}>
+                      Çevirmek için tıkla
+                    </Text>
+                  </CardBody>
+                </Card>
+
+                {/* Back */}
+                <Card
+                  as={motion.div}
+                  position="absolute"
+                  inset={0}
+                  sx={{ backfaceVisibility: 'hidden' }}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  bg="deepSea.inkBlack"
+                  style={{ transform: 'rotateY(180deg)' }}
+                  border="1px solid rgba(255,255,255,0.1)"
+                  boxShadow="xl"
+                  borderRadius="2xl"
+                >
+                  <CardBody display="flex" flexDirection="column" alignItems="center" justifyContent="center">
+                    <Text fontSize="3xl" fontWeight="bold" textAlign="center" color="white">
+                      {current?.back}
+                    </Text>
+                  </CardBody>
+                </Card>
+              </motion.div>
+            </Box>
+
+            {/* Controls */}
+            <HStack spacing={4} w="full" justify="center">
+              <IconButton
+                aria-label="Önceki"
+                icon={<ArrowBackIcon />}
+                onClick={(e) => { e.stopPropagation(); prev() }}
+                size="lg"
+                isRound
+                variant="ghost"
+                fontSize="24px"
+                color="deepSea.lavenderGrey"
+                _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+              />
+              <Button
+                leftIcon={<RepeatIcon />}
+                onClick={(e) => { e.stopPropagation(); shuffle() }}
+                variant="outline"
+                borderRadius="full"
+                px={8}
+                color="deepSea.lavenderGrey"
+                borderColor="deepSea.lavenderGrey"
+                _hover={{ bg: 'deepSea.duskBlue', color: 'white', borderColor: 'deepSea.duskBlue' }}
+              >
+                Karıştır
+              </Button>
+              <IconButton
+                aria-label="Sonraki"
+                icon={<ArrowForwardIcon />}
+                onClick={(e) => { e.stopPropagation(); next() }}
+                size="lg"
+                isRound
+                variant="ghost"
+                fontSize="24px"
+                color="deepSea.lavenderGrey"
+                _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+              />
+            </HStack>
+          </VStack>
+        )}
       </Flex>
     </Box>
   )
