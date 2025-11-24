@@ -87,6 +87,206 @@ export default function SetScreen() {
     }
   }
 
+  async function exportFlashCardPDF() {
+    if (!setItem) return
+    setIsExporting(true)
+    try {
+      const nowStr = toTRDate(new Date())
+      const slugify = (s: string) => s
+        .normalize('NFD')
+        .replace(/[ - ]/g, (c) => c)
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9\s-]+/g, '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .toLowerCase()
+      const filename = `flashcards_${slugify(setItem.name)}_${nowStr}.pdf`
+
+      const css = `
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        #pdf-root { 
+          font-family: Inter, system-ui, sans-serif; 
+          background: #fff; 
+          width: 210mm;
+          margin: 0;
+          padding: 0;
+        }
+        .page {
+          width: 210mm;
+          height: 296mm; /* Slightly less than 297mm to prevent overflow */
+          padding: 10mm;
+          page-break-after: always;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(4, 1fr);
+          gap: 0;
+        }
+        .page:last-child { page-break-after: auto; }
+        .card {
+          border: 1px dashed #999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          text-align: center;
+          height: 100%;
+          width: 100%;
+          overflow: hidden;
+          position: relative;
+        }
+        .card-content {
+          width: 100%;
+          font-weight: 700;
+          color: #000;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(4, 1fr);
+          gap: 0;
+        }
+        .page:last-child { page-break-after: auto; }
+        .card {
+          border: 1px dashed #999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          text-align: center;
+          height: 100%;
+          width: 100%;
+          overflow: hidden;
+          position: relative;
+        }
+        .card-content {
+          width: 100%;
+          font-weight: 700;
+          color: #000;
+          word-wrap: break-word;
+          line-height: 1.2;
+        }
+        /* Dynamic font sizing based on length */
+        .text-lg { font-size: 22pt; }
+        .text-md { font-size: 16pt; }
+        .text-sm { font-size: 12pt; }
+        .text-xs { font-size: 10pt; }
+        
+        .meta {
+          position: absolute;
+          bottom: 4px;
+          right: 4px;
+          font-size: 8px;
+          color: #ccc;
+          font-weight: normal;
+        }
+      `
+
+      // Helper to determine font size class
+      const getSizeClass = (text: string) => {
+        if (!text) return 'text-lg'
+        if (text.length < 10) return 'text-lg'
+        if (text.length < 25) return 'text-md'
+        if (text.length < 60) return 'text-sm'
+        return 'text-xs'
+      }
+
+      // Chunk words into groups of 12
+      const chunkSize = 12
+      const chunks = []
+      for (let i = 0; i < words.length; i += chunkSize) {
+        chunks.push(words.slice(i, i + chunkSize))
+      }
+
+      let pagesHtml = ''
+
+      chunks.forEach((chunk, pageIndex) => {
+        // --- FRONT PAGE (English) ---
+        // Normal order: 1, 2, 3...
+        let frontCardsHtml = ''
+        // Fill up to 12 slots (empty if less)
+        for (let i = 0; i < 12; i++) {
+          const word = chunk[i]
+          if (word) {
+            frontCardsHtml += `
+              <div class="card">
+                <div class="card-content ${getSizeClass(word.eng)}">${word.eng}</div>
+                <div class="meta">${pageIndex + 1}-F-${i + 1}</div>
+              </div>`
+          } else {
+            frontCardsHtml += `<div class="card"></div>`
+          }
+        }
+        pagesHtml += `<div class="page">${frontCardsHtml}</div>`
+
+        // --- BACK PAGE (Turkish) ---
+        // Mirrored rows for double-sided printing
+        // Row 1 (0,1,2) -> becomes (2,1,0)
+        // Row 2 (3,4,5) -> becomes (5,4,3)
+        // ...
+        let backCardsHtml = ''
+        const rowSize = 3
+        const rows = []
+        // Create 4 rows of 3 items
+        for (let r = 0; r < 4; r++) {
+          const rowItems = []
+          for (let c = 0; c < 3; c++) {
+            const index = r * 3 + c
+            rowItems.push(chunk[index]) // could be undefined
+          }
+          // Reverse the row for mirroring
+          rows.push(rowItems.reverse())
+        }
+
+        // Flatten rows back to single list
+        const mirroredChunk = rows.flat()
+
+        mirroredChunk.forEach((word, i) => {
+          if (word) {
+            backCardsHtml += `
+              <div class="card">
+                <div class="card-content ${getSizeClass(word.tr)}">${word.tr}</div>
+                 <div class="meta">${pageIndex + 1}-B-${i + 1}</div>
+              </div>`
+          } else {
+            backCardsHtml += `<div class="card"></div>`
+          }
+        })
+        pagesHtml += `<div class="page">${backCardsHtml}</div>`
+      })
+
+      const html = `
+        <div id="pdf-root">
+          <style>${css}</style>
+          ${pagesHtml}
+        </div>
+      `
+
+      const container = document.createElement('div')
+      container.innerHTML = html
+      document.body.appendChild(container)
+
+      const opt = {
+        margin: 0,
+        filename,
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: false },
+        pagebreak: { mode: ['css'] },
+      }
+
+      await html2pdf()
+        .from(container.querySelector('#pdf-root') as HTMLElement)
+        .set(opt)
+        .toPdf()
+        .save()
+
+      document.body.removeChild(container)
+      toast({ title: 'Flash Kart PDF indirildi', status: 'success' })
+    } catch (e) {
+      console.error(e)
+      toast({ title: 'PDF oluşturma hatası', description: String(e), status: 'error' })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   async function exportPDF() {
     if (!setItem) return
     setIsExporting(true)
@@ -209,16 +409,29 @@ export default function SetScreen() {
               {day?.name || ""}
             </Text>
           </VStack>
-          <Button
-            leftIcon={<DownloadIcon />}
-            onClick={exportPDF}
-            isLoading={isExporting}
-            loadingText="İndiriliyor"
-            variant="outline"
-            size="sm"
-          >
-            PDF
-          </Button>
+          <HStack spacing={2}>
+            <Button
+              leftIcon={<DownloadIcon />}
+              onClick={exportPDF}
+              isLoading={isExporting}
+              loadingText="Tablo"
+              variant="outline"
+              size="sm"
+            >
+              Tablo PDF
+            </Button>
+            <Button
+              leftIcon={<DownloadIcon />}
+              onClick={exportFlashCardPDF}
+              isLoading={isExporting}
+              loadingText="Kartlar"
+              variant="solid"
+              colorScheme="blue"
+              size="sm"
+            >
+              Flash Kart PDF
+            </Button>
+          </HStack>
         </Flex>
 
         {/* Add Word Form */}

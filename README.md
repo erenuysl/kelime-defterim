@@ -9,6 +9,7 @@ This is a simple web application to help you learn new vocabulary. You can creat
 *   **Vocabulary:** Add English words, their Turkish meanings, and synonyms.
 *   **Flashcards:** Practice your words with a flip-card mode.
 *   **PDF Export:** Save your word lists as PDF files.
+*   **Flash Card PDF:** Export words in a 3x4 grid format optimized for printing. Includes double-sided mirroring logic (English front, Turkish back) and cut guides.
 *   **Dark Mode:** A beautiful "Deep Sea" theme that is easy on the eyes.
 *   **Mobile Friendly:** Works great on your phone and computer.
 
