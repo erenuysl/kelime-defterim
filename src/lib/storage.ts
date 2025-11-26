@@ -8,6 +8,9 @@ export type Word = {
   eng: string
   tr: string
   synonym?: string
+  type?: string
+  engDefinition?: string
+  academicSentences?: string[]
   createdAt: string
 }
 
@@ -50,7 +53,7 @@ export type LegacyDay = {
 }
 
 export function toTRDate(d: Date): string {
-  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
+  const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
@@ -120,7 +123,16 @@ export function addWordToSet(dayId: string, setIdTarget: string, word: Omit<Word
   const day = v.days[di]
   const si = day.sets.findIndex(s => s.id === setIdTarget)
   if (si < 0) throw new Error('Set not found')
-  const newWord: Word = { id: wordId(), eng: word.eng.trim(), tr: word.tr.trim(), synonym: word.synonym?.trim() || undefined, createdAt: new Date().toISOString() }
+  const newWord: Word = {
+    id: wordId(),
+    eng: word.eng.trim(),
+    tr: word.tr.trim(),
+    synonym: word.synonym?.trim() || undefined,
+    type: word.type?.trim() || undefined,
+    engDefinition: word.engDefinition?.trim() || undefined,
+    academicSentences: word.academicSentences || undefined,
+    createdAt: new Date().toISOString()
+  }
   const set = day.sets[si]
   const nextSet: Set = { ...set, words: [...set.words, newWord] }
   const nextDay: Day = { ...day, sets: day.sets.map((s, i) => (i === si ? nextSet : s)) }
@@ -145,6 +157,9 @@ export function updateWord(dayId: string, setIdTarget: string, wordIdTarget: str
     eng: patch.eng !== undefined ? String(patch.eng) : w.eng,
     tr: patch.tr !== undefined ? String(patch.tr) : w.tr,
     synonym: patch.synonym !== undefined ? (patch.synonym || undefined) : w.synonym,
+    type: patch.type !== undefined ? (patch.type || undefined) : w.type,
+    engDefinition: patch.engDefinition !== undefined ? (patch.engDefinition || undefined) : w.engDefinition,
+    academicSentences: patch.academicSentences !== undefined ? (patch.academicSentences || undefined) : w.academicSentences,
   }
   const nextSet: Set = { ...set, words: set.words.map((x, i) => (i === wi ? nextW : x)) }
   const nextDay: Day = { ...day, sets: day.sets.map((s, i) => (i === si ? nextSet : s)) }

@@ -21,15 +21,27 @@ import {
   CardBody,
   VStack,
   HStack,
+  Stack,
   Badge,
+  Checkbox,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Spinner,
 } from "@chakra-ui/react"
-import { ChevronLeftIcon, DeleteIcon, DownloadIcon } from "@chakra-ui/icons"
+import { ChevronLeftIcon, DeleteIcon, DownloadIcon, ViewIcon, StarIcon, CopyIcon } from "@chakra-ui/icons"
 import { getDay, getSet, addWordToSet, removeWord, toTRDate } from "../lib/storage"
 // @ts-ignore
 import html2pdf from "html2pdf.js/dist/html2pdf.bundle.min"
 import type { Day, Set, Word } from "../lib/storage"
 import ConfirmDialog from "../components/ConfirmDialog"
 import EmptyState from "../components/EmptyState"
+import { fetchAcademicData, generateContextStory } from "../services/geminiService"
 
 export default function SetScreen() {
   const { dayId, setId } = useParams()
@@ -43,8 +55,21 @@ export default function SetScreen() {
   const [eng, setEng] = useState("")
   const [synonym, setSynonym] = useState("")
   const [tr, setTr] = useState("")
+
+  // Extra Academic Data State
+  const [type, setType] = useState("")
+  const [engDefinition, setEngDefinition] = useState("")
+  const [academicSentences, setAcademicSentences] = useState<string[]>([])
+  const [isAutoFilling, setIsAutoFilling] = useState(false)
+
   const [isExporting, setIsExporting] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  // Context Story State
+  const [selectedWordIds, setSelectedWordIds] = useState<string[]>([])
+  const [isGeneratingStory, setIsGeneratingStory] = useState(false)
+  const [story, setStory] = useState<{ englishStory: string; turkishTranslation: string } | null>(null)
+  const { isOpen: isStoryOpen, onOpen: onStoryOpen, onClose: onStoryClose } = useDisclosure()
 
   useEffect(() => {
     if (!dayId || !setId) return
@@ -55,6 +80,38 @@ export default function SetScreen() {
     setWords(s?.words || [])
   }, [dayId, setId])
 
+  const handleAutoFill = async () => {
+    if (!eng.trim()) {
+      toast({ title: "Lütfen önce İngilizce kelimeyi girin", status: "warning" })
+      return
+    }
+
+    setIsAutoFilling(true)
+    try {
+      const data = await fetchAcademicData(eng.trim())
+
+      // Populate fields
+      setTr(data.turkish)
+      setSynonym(data.synonyms)
+
+      // Store hidden academic data
+      setType(data.type)
+      setEngDefinition(data.engDefinition)
+      setAcademicSentences(data.academicSentences)
+
+      toast({ title: "Otomatik doldurma başarılı ✨", status: "success" })
+    } catch (e: any) {
+      console.error(e)
+      toast({
+        title: "Otomatik doldurma başarısız",
+        description: e.message || String(e),
+        status: "error"
+      })
+    } finally {
+      setIsAutoFilling(false)
+    }
+  }
+
   const handleAddWord = () => {
     if (!dayId || !setId) return
     if (!eng.trim() || !tr.trim()) {
@@ -62,12 +119,25 @@ export default function SetScreen() {
       return
     }
     try {
-      addWordToSet(dayId, setId, { eng: eng.trim(), tr: tr.trim(), synonym: synonym.trim() || undefined })
+      addWordToSet(dayId, setId, {
+        eng: eng.trim(),
+        tr: tr.trim(),
+        synonym: synonym.trim() || undefined,
+        type: type || undefined,
+        engDefinition: engDefinition || undefined,
+        academicSentences: academicSentences.length > 0 ? academicSentences : undefined
+      })
       const s = getSet(dayId, setId)
       setWords(s?.words || [])
+
+      // Reset form
       setEng("")
       setSynonym("")
       setTr("")
+      setType("")
+      setEngDefinition("")
+      setAcademicSentences([])
+
       toast({ title: "Kelime eklendi", status: "success" })
     } catch (e) {
       toast({ title: "Ekleme başarısız", description: String(e), status: "error" })
@@ -84,6 +154,37 @@ export default function SetScreen() {
       toast({ title: "Kelime silindi", status: "info" })
     } catch (e) {
       toast({ title: "Silme başarısız", description: String(e), status: "error" })
+    }
+  }
+
+  const toggleSelection = (wordId: string) => {
+    setSelectedWordIds(prev =>
+      prev.includes(wordId)
+        ? prev.filter(id => id !== wordId)
+        : [...prev, wordId]
+    )
+  }
+
+  const handleGenerateStory = async () => {
+    if (selectedWordIds.length === 0) return
+
+    setIsGeneratingStory(true)
+    try {
+      const selectedWords = words
+        .filter(w => selectedWordIds.includes(w.id))
+        .map(w => w.eng)
+
+      const result = await generateContextStory(selectedWords)
+      setStory(result)
+      onStoryOpen()
+    } catch (e: any) {
+      toast({
+        title: "Hikaye oluşturulamadı",
+        description: e.message || String(e),
+        status: "error"
+      })
+    } finally {
+      setIsGeneratingStory(false)
     }
   }
 
@@ -408,7 +509,13 @@ export default function SetScreen() {
               {day?.name || ""}
             </Text>
           </VStack>
-          <HStack spacing={2}>
+
+          {/* Navigation Buttons - Wrapped for Mobile */}
+          <Flex
+            wrap="wrap"
+            justify={{ base: 'center', md: 'flex-end' }}
+            gap={2}
+          >
             <Button
               leftIcon={<DownloadIcon />}
               onClick={exportPDF}
@@ -430,60 +537,118 @@ export default function SetScreen() {
             >
               Flash Kart PDF
             </Button>
-          </HStack>
+            <Button
+              leftIcon={<ViewIcon />}
+              onClick={() => navigate(`/print/${dayId}/${setId}`)}
+              variant="outline"
+              colorScheme="purple"
+              size="sm"
+            >
+              Akademik Baskı
+            </Button>
+          </Flex>
         </Flex>
 
         {/* Add Word Form */}
         <Card w="100%" maxW="1000px" variant="elevated">
           <CardBody>
-            <Flex wrap="wrap" justify="center" gap={4} align="flex-end">
-              <FormControl flex="1" minW={{ base: "100%", sm: "200px" }}>
-                <FormLabel>İngilizce</FormLabel>
-                <Input
-                  value={eng}
-                  onChange={(e) => setEng(e.target.value)}
-                  placeholder="run"
+            <VStack spacing={4}>
+              <Flex wrap="wrap" justify="center" gap={4} align="flex-end" w="100%">
+                <FormControl flex="1" minW={{ base: "100%", sm: "200px" }}>
+                  <FormLabel>İngilizce</FormLabel>
+                  <Input
+                    value={eng}
+                    onChange={(e) => setEng(e.target.value)}
+                    placeholder="run"
+                    size="lg"
+                  />
+                </FormControl>
+
+                <FormControl flex="1" minW={{ base: "100%", sm: "200px" }}>
+                  <FormLabel>Eş Anlam</FormLabel>
+                  <Input
+                    value={synonym}
+                    onChange={(e) => setSynonym(e.target.value)}
+                    placeholder="jog, sprint..."
+                    size="lg"
+                  />
+                </FormControl>
+
+                <FormControl flex="1" minW={{ base: "100%", sm: "200px" }}>
+                  <FormLabel>Türkçe</FormLabel>
+                  <Input
+                    value={tr}
+                    onChange={(e) => setTr(e.target.value)}
+                    placeholder="koşmak"
+                    size="lg"
+                  />
+                </FormControl>
+              </Flex>
+
+              {/* Add Word Buttons - Stacked on Mobile */}
+              <Stack direction={{ base: "column", sm: "row" }} w="100%" spacing={4}>
+                <Button
                   size="lg"
-                />
-              </FormControl>
-              <FormControl flex="1" minW={{ base: "100%", sm: "200px" }}>
-                <FormLabel>Eş Anlam (Opsiyonel)</FormLabel>
-                <Input
-                  value={synonym}
-                  onChange={(e) => setSynonym(e.target.value)}
-                  placeholder="jog"
+                  onClick={handleAutoFill}
+                  isLoading={isAutoFilling}
+                  loadingText="Dolduruluyor..."
+                  leftIcon={<StarIcon />}
+                  bgGradient="linear(to-r, deepSea.duskBlue, deepSea.lavenderGrey)"
+                  color="white"
+                  _hover={{
+                    bgGradient: "linear(to-r, deepSea.marineBlue, deepSea.duskBlue)",
+                    transform: "translateY(-1px)",
+                    boxShadow: "lg"
+                  }}
+                  _active={{
+                    bgGradient: "linear(to-r, deepSea.inkBlack, deepSea.duskBlue)",
+                    transform: "translateY(0)",
+                  }}
+                  flex={{ base: "none", sm: "1" }}
+                  w={{ base: "100%", sm: "auto" }}
+                  transition="all 0.2s"
+                >
+                  AI ile Doldur
+                </Button>
+                <Button
+                  variant="solid"
                   size="lg"
-                />
-              </FormControl>
-              <FormControl flex="1" minW={{ base: "100%", sm: "200px" }}>
-                <FormLabel>Türkçe</FormLabel>
-                <Input
-                  value={tr}
-                  onChange={(e) => setTr(e.target.value)}
-                  placeholder="koşmak"
-                  size="lg"
-                />
-              </FormControl>
-              <Button
-                variant="solid"
-                size="lg"
-                onClick={handleAddWord}
-                px={8}
-                w={{ base: "100%", md: "auto" }}
-              >
-                Ekle
-              </Button>
-            </Flex>
+                  onClick={handleAddWord}
+                  px={8}
+                  flex={{ base: "none", sm: "1" }}
+                  w={{ base: "100%", sm: "auto" }}
+                  colorScheme="green"
+                >
+                  Ekle
+                </Button>
+              </Stack>
+            </VStack>
           </CardBody>
         </Card>
 
         {/* Word List */}
         <Box w="100%" maxW="1000px">
           <HStack justify="space-between" mb={4} px={2}>
-            <Heading size="md" color="deepSea.alabasterGrey">Kelimeler</Heading>
-            <Badge bg="deepSea.duskBlue" color="white" fontSize="md" borderRadius="md" px={2}>
-              {words.length}
-            </Badge>
+            <HStack>
+              <Heading size="md" color="deepSea.alabasterGrey">Kelimeler</Heading>
+              <Badge bg="deepSea.duskBlue" color="white" fontSize="md" borderRadius="md" px={2}>
+                {words.length}
+              </Badge>
+            </HStack>
+
+            {/* Story Generation Button */}
+            {selectedWordIds.length > 0 && (
+              <Button
+                size="sm"
+                colorScheme="pink"
+                leftIcon={<StarIcon />}
+                onClick={handleGenerateStory}
+                isLoading={isGeneratingStory}
+                loadingText="Yazılıyor..."
+              >
+                Seçilenlerle Hikaye Yaz ({selectedWordIds.length})
+              </Button>
+            )}
           </HStack>
 
           {words.length === 0 ? (
@@ -497,6 +662,14 @@ export default function SetScreen() {
                 <Table variant="simple">
                   <Thead>
                     <Tr>
+                      <Th w="40px" p={2}>
+                        <Checkbox
+                          isChecked={selectedWordIds.length === words.length && words.length > 0}
+                          isIndeterminate={selectedWordIds.length > 0 && selectedWordIds.length < words.length}
+                          onChange={(e) => setSelectedWordIds(e.target.checked ? words.map(w => w.id) : [])}
+                          colorScheme="pink"
+                        />
+                      </Th>
                       <Th color="deepSea.lavenderGrey" w="50px">#</Th>
                       <Th color="deepSea.lavenderGrey">İngilizce</Th>
                       <Th color="deepSea.lavenderGrey" display={{ base: "none", sm: "table-cell" }}>Eş Anlam</Th>
@@ -507,6 +680,13 @@ export default function SetScreen() {
                   <Tbody>
                     {words.map((w, i) => (
                       <Tr key={w.id} _hover={{ bg: 'whiteAlpha.50' }}>
+                        <Td p={2}>
+                          <Checkbox
+                            isChecked={selectedWordIds.includes(w.id)}
+                            onChange={() => toggleSelection(w.id)}
+                            colorScheme="pink"
+                          />
+                        </Td>
                         <Td color="deepSea.lavenderGrey">{i + 1}</Td>
                         <Td fontWeight="bold">{w.eng}</Td>
                         <Td display={{ base: "none", sm: "table-cell" }} color="deepSea.lavenderGrey">{w.synonym || '-'}</Td>
@@ -548,6 +728,75 @@ export default function SetScreen() {
         title="Kelimeyi Sil"
         description="Bu kelimeyi silmek istediğine emin misin?"
       />
+
+      {/* Story Modal */}
+      <Modal isOpen={isStoryOpen} onClose={onStoryClose} size="xl" scrollBehavior="inside">
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent bg="deepSea.inkBlack" border="1px solid" borderColor="whiteAlpha.200">
+          <ModalHeader color="white">
+            <HStack>
+              <StarIcon color="pink.400" />
+              <Text>AI Context Story</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody pb={6}>
+            {story ? (
+              <VStack spacing={6} align="stretch">
+                <Box p={4} bg="whiteAlpha.100" borderRadius="md" borderLeft="4px solid" borderColor="pink.400">
+                  <Text color="white" fontSize="lg" lineHeight="1.8" fontStyle="italic">
+                    {story.englishStory.split(/(\*\*.*?\*\*)/).map((part, i) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return (
+                          <Text as="span" key={i} color="pink.300" fontWeight="bold" textDecoration="underline" textDecorationColor="pink.500">
+                            {part.slice(2, -2)}
+                          </Text>
+                        )
+                      }
+                      return <span key={i}>{part}</span>
+                    })}
+                  </Text>
+                </Box>
+
+                <Box>
+                  <Text color="gray.400" fontSize="sm" mb={2} textTransform="uppercase" letterSpacing="wider">
+                    Türkçe Çeviri
+                  </Text>
+                  <Text color="gray.300" lineHeight="1.6">
+                    {story.turkishTranslation.split(/(\*\*.*?\*\*)/).map((part, i) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return (
+                          <Text as="span" key={i} color="pink.300" fontWeight="bold" textDecoration="underline" textDecorationColor="pink.500">
+                            {part.slice(2, -2)}
+                          </Text>
+                        )
+                      }
+                      return <span key={i}>{part}</span>
+                    })}
+                  </Text>
+                </Box>
+              </VStack>
+            ) : (
+              <Flex justify="center" py={10}>
+                <Spinner color="pink.400" />
+              </Flex>
+            )}
+          </ModalBody>
+          <ModalFooter borderTop="1px solid" borderColor="whiteAlpha.100">
+            <Button
+              leftIcon={<CopyIcon />}
+              mr={3}
+              onClick={() => {
+                navigator.clipboard.writeText(`${story?.englishStory}\n\n${story?.turkishTranslation}`)
+                toast({ title: "Kopyalandı", status: "success" })
+              }}
+            >
+              Kopyala
+            </Button>
+            <Button variant="ghost" color="white" onClick={onStoryClose}>Kapat</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   )
 }

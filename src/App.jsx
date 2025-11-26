@@ -6,6 +6,7 @@ import HomeScreen from './screens/HomeScreen.tsx'
 import FlashCards from './screens/FlashCards.tsx'
 import DayScreen from './screens/DayScreen.tsx'
 import SetScreen from './screens/SetScreen.tsx'
+import AcademicPrintScreen from './screens/AcademicPrintScreen.tsx'
 
 const PageTransition = ({ children }) => {
   return (
@@ -31,6 +32,7 @@ export function Layout() {
             <Route path="/" element={<PageTransition><HomeScreen /></PageTransition>} />
             <Route path="/day/:id" element={<PageTransition><DayScreen /></PageTransition>} />
             <Route path="/day/:dayId/set/:setId" element={<PageTransition><SetScreen /></PageTransition>} />
+            <Route path="/print/:dayId/:setId" element={<AcademicPrintScreen />} />
             <Route path="/flashcards" element={<PageTransition><FlashCards /></PageTransition>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
