@@ -48,5 +48,7 @@ This is a simple web application to help you learn new vocabulary. You can creat
 *   Chakra UI
 *   TypeScript
 *   Vite
+*   Gemini API
 
 Enjoy learning!
+
