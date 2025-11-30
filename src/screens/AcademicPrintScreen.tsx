@@ -8,7 +8,6 @@ import {
     Divider,
     VStack,
     Button,
-    useToast,
     HStack,
     Container,
     Icon,
@@ -25,7 +24,6 @@ import type { Word } from "../lib/storage"
 export default function AcademicPrintScreen() {
     const { dayId, setId } = useParams()
     const navigate = useNavigate()
-    const toast = useToast()
 
     const [words, setWords] = useState<Word[]>([])
     const [setName, setSetName] = useState("")
@@ -49,7 +47,8 @@ export default function AcademicPrintScreen() {
         setWords(s?.words || [])
     }
 
-    const handlePrint = () => {
+    const handleDownloadPDF = () => {
+        // Use browser's native print which gives exact preview match
         window.print()
     }
 
@@ -61,7 +60,7 @@ export default function AcademicPrintScreen() {
     })
 
     // Split words into chunks of 4 for each page
-    const chunks = []
+    const chunks: Word[][] = []
     for (let i = 0; i < filteredWords.length; i += 4) {
         chunks.push(filteredWords.slice(i, i + 4))
     }
@@ -152,14 +151,14 @@ export default function AcademicPrintScreen() {
                                 <Button
                                     colorScheme="gray"
                                     variant="solid"
-                                    onClick={handlePrint}
+                                    onClick={handleDownloadPDF}
                                     leftIcon={<DownloadIcon />}
                                     bg="white"
                                     color="gray.900"
                                     _hover={{ bg: 'gray.100' }}
                                     size="sm"
                                 >
-                                    Print
+                                    Save as PDF
                                 </Button>
                             </HStack>
                         </Flex>
@@ -182,7 +181,7 @@ export default function AcademicPrintScreen() {
               margin: 0;
               padding: 0;
               width: 210mm;
-              height: auto !important; /* FIXED: Allow multi-page growth */
+              height: auto !important;
               background: white !important;
             }
 
@@ -195,44 +194,56 @@ export default function AcademicPrintScreen() {
 
             .page-container {
               width: 210mm !important;
-              height: 297mm !important; /* Full A4 Height */
+              min-height: 297mm !important;
+              max-height: 297mm !important;
+              height: 297mm !important;
               padding: 10mm !important;
-              margin: 0 auto !important;
+              margin: 0 !important;
               box-sizing: border-box !important;
               display: grid !important;
               grid-template-columns: 1fr 1fr !important;
               grid-template-rows: 1fr 1fr !important;
               gap: 10mm !important;
+              page-break-before: auto !important;
               page-break-after: always !important;
-              overflow: hidden;
+              page-break-inside: avoid !important;
+              break-before: auto !important;
+              break-after: always !important;
+              break-inside: avoid !important;
+              overflow: hidden !important;
+              position: relative !important;
             }
 
             /* Explicitly disable break for the last page */
             .page-container.last-page {
               page-break-after: auto !important;
               break-after: auto !important;
-              margin-bottom: 0 !important;
-              padding-bottom: 0 !important;
             }
             
             /* Standard Card Layout for Print */
             .flashcard {
               height: 100% !important;
+              max-height: 100% !important;
               border: 2px solid #1a202c !important;
-              break-inside: avoid;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
               padding: 1rem !important;
               overflow: hidden !important;
               display: flex !important;
               flex-direction: column !important;
+              box-sizing: border-box !important;
             }
             
             .flashcard .academic-context-box { padding-left: 0.5rem !important; border-left-width: 3px !important; }
+            
+            /* Darken labels for print legibility */
+            .definition-label { color: #2d3748 !important; } /* gray.700 */
           }
 
             /* Screen Preview Styles - MATCHING PRINT STYLES */
             .page-container {
               width: 210mm;
-              height: 260mm; /* Match print height */
+              height: 297mm; /* Match exact A4 height */
               background: white;
               margin-bottom: 2rem;
               padding: 10mm; /* Match print padding */
@@ -241,9 +252,10 @@ export default function AcademicPrintScreen() {
               /* Match print grid */
               grid-template-columns: repeat(2, minmax(0, 1fr));
               grid-template-rows: repeat(2, minmax(0, 1fr));
-              gap: 5mm; /* Match print gap */
+              gap: 10mm; /* Match print gap */
               position: relative;
               overflow: hidden; /* Match print overflow */
+              box-sizing: border-box;
             }
 
             /* Apply standard styles to screen preview as well */
