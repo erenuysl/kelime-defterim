@@ -409,6 +409,12 @@ export default function SetScreen() {
         thead .columns-row th { background: #f2f2f2; font-weight: 700; font-size: 12pt; }
         tbody td { background: #ffffff; font-size: 12pt; }
         tfoot .footer-row td { border: none; text-align: center; color: #777; font-size: 8pt; padding-top: 8px; }
+        
+        /* Fix for index column width */
+        table.word-table th:nth-child(1), table.word-table td:nth-child(1) { width: 40px; text-align: center; }
+        
+        /* Fix for English column width */
+        table.word-table th:nth-child(2), table.word-table td:nth-child(2) { width: 150px; }
       `
 
       const rowsHtml = words.map((w, i) => (

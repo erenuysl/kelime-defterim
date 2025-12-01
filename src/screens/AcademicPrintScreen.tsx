@@ -114,11 +114,11 @@ export default function AcademicPrintScreen() {
                                 _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
                                 size="sm"
                             >
-                                Back
+                                Geri Dön
                             </Button>
                             <VStack align={{ base: 'end', md: 'start' }} spacing={0}>
-                                <Heading size="sm" color="white">Academic Builder</Heading>
-                                <Text fontSize="xs" color="gray.400">Print Preview</Text>
+                                <Heading size="sm" color="white">Akademik Oluşturucu</Heading>
+                                <Text fontSize="xs" color="gray.400">Baskı Önizleme</Text>
                             </VStack>
                         </HStack>
 
@@ -134,7 +134,7 @@ export default function AcademicPrintScreen() {
                         >
                             <FormControl display="flex" alignItems="center" w="auto">
                                 <FormLabel htmlFor="incomplete-toggle" mb="0" fontSize="sm" color="gray.300" mr={2} cursor="pointer">
-                                    Include Incomplete
+                                    Eksikleri Dahil Et
                                 </FormLabel>
                                 <Switch
                                     id="incomplete-toggle"
@@ -146,7 +146,7 @@ export default function AcademicPrintScreen() {
 
                             <HStack spacing={3}>
                                 <Badge colorScheme="purple" p={2} borderRadius="md" fontSize="sm">
-                                    {filteredWords.length} Words
+                                    {filteredWords.length} Kelime
                                 </Badge>
                                 <Button
                                     colorScheme="gray"
@@ -158,7 +158,7 @@ export default function AcademicPrintScreen() {
                                     _hover={{ bg: 'gray.100' }}
                                     size="sm"
                                 >
-                                    Save as PDF
+                                    PDF Olarak Kaydet
                                 </Button>
                             </HStack>
                         </Flex>
@@ -278,8 +278,8 @@ export default function AcademicPrintScreen() {
                 {filteredWords.length === 0 && (
                     <VStack py={20} spacing={4} color="gray.400">
                         <Icon as={InfoIcon} boxSize={10} color="gray.500" />
-                        <Text fontSize="xl" fontWeight="medium">No words to display</Text>
-                        <Text>Add words in the Set screen or enable "Include Incomplete" to see legacy data.</Text>
+                        <Text fontSize="xl" fontWeight="medium">Gösterilecek kelime yok</Text>
+                        <Text>Set ekranından kelime ekleyin veya eski verileri görmek için "Eksikleri Dahil Et" seçeneğini etkinleştirin.</Text>
                     </VStack>
                 )}
 
@@ -340,7 +340,7 @@ export default function AcademicPrintScreen() {
                                 fontSize="sm"
                                 fontWeight="bold"
                             >
-                                Page {pageIndex + 1} (A4 Preview)
+                                Sayfa {pageIndex + 1} (A4 Önizleme)
                             </Text>
 
                             {chunk.map((word) => (
@@ -393,10 +393,10 @@ export default function AcademicPrintScreen() {
                                         {/* Definition */}
                                         <Box mb={4}>
                                             <Text fontWeight="bold" fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1} className="definition-label">
-                                                Definition
+                                                Tanım
                                             </Text>
                                             <Text fontSize="md" lineHeight="1.5" fontWeight="500" color="gray.800" fontFamily="sans-serif">
-                                                {renderBoldText(word.engDefinition || "No definition available.")}
+                                                {renderBoldText(word.engDefinition || "Tanım mevcut değil.")}
                                             </Text>
                                         </Box>
 
@@ -404,7 +404,7 @@ export default function AcademicPrintScreen() {
                                         {word.synonym && (
                                             <Box mb={4}>
                                                 <Text fontWeight="bold" fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1} className="definition-label">
-                                                    Synonyms
+                                                    Eş Anlamlılar
                                                 </Text>
                                                 <Text fontStyle="italic" fontSize="sm" color="gray.700">
                                                     {word.synonym}
@@ -416,7 +416,7 @@ export default function AcademicPrintScreen() {
                                     {/* Sentences - Flexible Height with Overflow Protection */}
                                     <Box flex="1" my={2} overflow="hidden" minH={0}>
                                         <Text fontWeight="bold" fontSize="xs" color="gray.500" textTransform="uppercase" mb={2} letterSpacing="wider" className="definition-label">
-                                            Academic Context
+                                            Akademik Bağlam
                                         </Text>
                                         <VStack align="start" spacing={3}>
                                             {word.academicSentences && word.academicSentences.length > 0 ? (
@@ -437,7 +437,7 @@ export default function AcademicPrintScreen() {
                                                     );
                                                 })
                                             ) : (
-                                                <Text fontSize="sm" color="gray.400" fontStyle="italic">No academic sentences available.</Text>
+                                                <Text fontSize="sm" color="gray.400" fontStyle="italic">Akademik cümle bulunamadı.</Text>
                                             )}
                                         </VStack>
                                     </Box>
